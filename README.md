@@ -1,9 +1,98 @@
-# 🚀 UAS Administrasi Server – MultiApp System Deployment
+#  UAS Administrasi Server – MultiApp System Deployment
+# Nama: Wildan Ramdani
+# NIM : 2388010053
+# MK  : Administrasi Server
+
 
 Sistem ini terdiri dari dua aplikasi:
 1. **Web Statis**: Website Curriculum Vitae (CV) Wildan Ramdani yang disajikan via Nginx di Port 80.
 2. **Web Dinamis**: Aplikasi Manajemen Perpustakaan Digital berbasis Next.js 14 & MariaDB yang berjalan di Port 3000.
 
+---
+
+## Langkah-Langkah Deployment
+
+
+
+---
+
+## 📋 Langkah-Langkah Deployment Lengkap (Dari Awal)
+
+Berikut adalah panduan langkah demi langkah untuk men-deploy sistem MultiApp ini di AWS EC2:
+
+### Langkah 1: Persiapan Server AWS EC2
+1. **Sewa/Jalankan EC2 Instance** dengan sistem operasi **Ubuntu 24.04 LTS** atau **Ubuntu 26.04 LTS**.
+2. **Konfigurasi Security Group AWS**:
+   - Tambahkan rule **Inbound** untuk membuka port berikut:
+     - **Port 22** (SSH) untuk akses terminal dan deployment.
+     - **Port 80** (HTTP) untuk mengakses Web Statis (CV).
+     - **Port 3000** (HTTP) untuk mengakses Web Dinamis (Next.js).
+     ![alt text](image.png)
+3. **Hubungkan ke EC2 via SSH**:
+   ```bash
+   ssh -i "key-anda.pem" ubuntu@<IP_EC2>
+   ```
+
+### Langkah 2: Instalasi Docker & Docker Compose di EC2
+Jalankan perintah berikut di terminal EC2 untuk memperbarui paket dan menginstal Docker:
+```bash
+# Update repository
+sudo apt-get update -y
+
+# Instal Docker dan Docker Compose Plugin
+sudo apt-get install -y docker.io docker-compose-v2
+
+# Tambahkan user ubuntu ke group docker agar bisa menjalankan docker tanpa 'sudo'
+sudo usermod -aG docker ubuntu
+
+# Terapkan perubahan group tanpa logout
+newgrp docker
+```
+![alt text](image-3.png)
+
+### Langkah 3: Persiapan Direktori Proyek & Izin Akses
+Sebelum mendistribusikan file konfigurasi, buat folder proyek dan pastikan hak akses folder dimiliki sepenuhnya oleh user `ubuntu` (untuk menghindari error *Permission denied*):
+```bash
+# Buat folder kerja utama
+mkdir -p ~/uas-server
+
+# Berikan hak akses penuh kepada user ubuntu
+sudo chown -R ubuntu:ubuntu ~/uas-server
+```
+![alt text](image-2.png)
+### Langkah 4: Login Docker Hub di EC2
+Lakukan login ke Docker Hub menggunakan Personal Access Token (PAT) Anda sebagai password:
+```bash
+docker login -u <DOCKER_USERNAME>
+# Masukkan PAT Docker Hub Anda saat diminta password (contoh PAT: dckr_pat_***)
+```
+![alt text](image-5.png)
+
+### Langkah 5: Konfigurasi GitHub Secrets
+Pada halaman repositori GitHub Anda, masuk ke **Settings > Secrets and variables > Actions > New repository secret** dan tambahkan data berikut:
+* `EC2_HOST`: IP Publik EC2 Anda (contoh: `47.131.81.207`).
+* `EC2_USERNAME`: Username SSH Anda (`ubuntu`).
+* `EC2_SSH_KEY`: Salin seluruh isi file `.pem` (private key) Anda.
+* `DOCKER_USERNAME`: Username Docker Hub Anda (contoh: `kakangwildan`).
+* `DOCKER_PASSWORD`: Personal Access Token (PAT) Docker Hub Anda.
+
+![alt text](image-4.png)
+
+### Langkah 6: Deployment Otomatis via Git Push (CI/CD)
+1. Commit semua perubahan kode lokal Anda:
+   ```bash
+   git add .
+   git commit -m "feat: implement dynamic app and static CV deployment"
+   ```
+2. Push ke branch utama untuk men-trigger alur CI/CD:
+   ```bash
+   git push origin main
+   ```
+3. GitHub Actions akan secara otomatis:
+   - Mem-build image Next.js dan mempublikasikannya ke Docker Hub.
+   - Menyalin file `docker-compose.yml`, `nginx.conf`, `db/init.sql`, dan aset `Web-Statis` ke EC2.
+   - Menghubungkan via SSH ke EC2, melakukan pull image terbaru, dan menjalankan kontainer dengan `docker compose up -d`.
+![alt text](image-6.png)
 ---
 
 ## 🗺️ Topologi Arsitektur & Alur Jaringan

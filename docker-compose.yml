@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  database:
+    image: mariadb:10.6
+    container_name: perpus_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: perpustakaan
+      MYSQL_USER: perpustakaan_user
+      MYSQL_PASSWORD: perpustakaan_pass
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    # Do not expose 3306 to public host for better security. Keep it internal.
+    networks:
+      - perpus_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "perpustakaan_user", "-pperpustakaan_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web-dinamis:
+    image: kakangwildan/uas-2388010053-wildan:latest
+    build:
+      context: ./Web-Dinamis
+      dockerfile: Dockerfile
+    container_name: perpus_web_dinamis
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_HOST=database
+      - DATABASE_USER=perpustakaan_user
+      - DATABASE_PASSWORD=perpustakaan_pass
+      - DATABASE_NAME=perpustakaan
+      - NEXTAUTH_URL=http://47.131.81.207:3000
+      - NODE_ENV=production
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - perpus_net
+
+  web-statis:
+    image: nginx:alpine
+    container_name: perpus_web_statis
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./Web-Statis:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - perpus_net
+
+volumes:
+  db_data:
+
+networks:
+  perpus_net:
+    driver: bridge

@@ -1,0 +1,28 @@
+name: Deploy Web Statis (CV)
+
+on:
+  push:
+    paths:
+      - 'Web-Statis/**'
+      - '.github/workflows/static-deploy.yml'
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    name: Deploy Static Assets to EC2
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Deploy Web-Statis to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "Web-Statis/*"
+          target: "~/uas-server"
+          strip_components: 0

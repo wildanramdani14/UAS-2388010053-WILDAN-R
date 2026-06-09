@@ -20,10 +20,15 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# Ensure directories exist before copying (handles empty public dir)
+RUN mkdir -p ./public ./.next/static
+
 # Copy output files from builder
-COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
+# Copy public dir only if it exists (use || true to avoid failure)
+RUN --mount=type=bind,from=builder,source=/app/public,target=/tmp/public \
+    cp -r /tmp/public/. ./public/ 2>/dev/null || true
 
 EXPOSE 3000
 CMD ["node", "server.js"]

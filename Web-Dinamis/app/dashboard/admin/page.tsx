@@ -139,7 +139,7 @@ export default function AdminDashboard() {
               className="flex items-center gap-2 px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold"
             >
               <FiLogOut size={20} />
-              Logout
+              Exit
             </button>
           </div>
 
@@ -368,11 +368,10 @@ export default function AdminDashboard() {
                         </td>
                         <td className="py-3 px-4 text-sm font-semibold">{book.stok}</td>
                         <td className="py-3 px-4 text-sm">
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            book.stokTersedia > 0
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${book.stokTersedia > 0
                               ? "bg-green-100 text-green-800"
                               : "bg-red-100 text-red-800"
-                          }`}>
+                            }`}>
                             {book.stokTersedia}
                           </span>
                         </td>

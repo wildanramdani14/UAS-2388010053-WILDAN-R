@@ -131,7 +131,7 @@ export default function AdminDashboard() {
           {/* Header */}
           <div className="flex justify-between items-center mb-12">
             <div>
-              <h1 className="section-title">Wildan Ramdani 2388010053</h1>
+              <h1 className="section-title">Wildan Bewok Si Paling Ganteng</h1>
               <p className="text-gray-600">Kelola koleksi buku perpustakaan</p>
             </div>
             <button

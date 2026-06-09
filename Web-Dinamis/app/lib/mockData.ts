@@ -75,6 +75,14 @@ let localBooks: Book[] = [
 let localPeminjaman: Peminjaman[] = []
 let localPengembalian: Pengembalian[] = []
 
+// Helper to format ISO date string or Date object to MySQL/MariaDB DATETIME format: YYYY-MM-DD HH:mm:ss
+function toDbDateTime(dateInput: string | Date | undefined): string {
+  if (!dateInput) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  const pad = (num: number) => num.toString().padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
 // Database operations helper functions with local storage fallbacks
 
 export async function findUserByEmail(email: string): Promise<User | null> {
@@ -83,7 +91,7 @@ export async function findUserByEmail(email: string): Promise<User | null> {
     const list = rows as User[]
     return list.length > 0 ? list[0] : null
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     return localUsers.find(user => user.email.toLowerCase() === email.toLowerCase()) || null
   }
 }
@@ -94,7 +102,7 @@ export async function findUserById(id: string): Promise<User | null> {
     const list = rows as User[]
     return list.length > 0 ? list[0] : null
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     return localUsers.find(user => user.id === id) || null
   }
 }
@@ -112,11 +120,11 @@ export async function createUser(user: User): Promise<void> {
         user.noAnggota || null,
         user.nomorTelepon || null,
         user.alamat || null,
-        user.createdAt,
+        toDbDateTime(user.createdAt),
       ]
     )
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     localUsers.push(user)
   }
 }
@@ -126,7 +134,7 @@ export async function getBooks(): Promise<Book[]> {
     const [rows] = await pool.query("SELECT * FROM books ORDER BY createdAt DESC")
     return rows as Book[]
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     return localBooks
   }
 }
@@ -137,7 +145,7 @@ export async function findBookById(id: string): Promise<Book | null> {
     const list = rows as Book[]
     return list.length > 0 ? list[0] : null
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     return localBooks.find(book => book.id === id) || null
   }
 }
@@ -158,12 +166,12 @@ export async function createBook(book: Book): Promise<void> {
         book.stokTersedia,
         book.deskripsi,
         book.gambar,
-        book.createdAt,
-        book.updatedAt,
+        toDbDateTime(book.createdAt),
+        toDbDateTime(book.updatedAt),
       ]
     )
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     localBooks.push(book)
   }
 }
@@ -173,10 +181,17 @@ export async function updateBook(id: string, book: Partial<Book>): Promise<void>
     const fields: string[] = []
     const values: any[] = []
     
-    for (const [key, value] of Object.entries(book)) {
+    // Auto-update the updatedAt field
+    const updateData = { ...book, updatedAt: new Date() }
+    
+    for (const [key, value] of Object.entries(updateData)) {
       if (key !== "id" && key !== "createdAt") {
         fields.push(`${key} = ?`)
-        values.push(value)
+        if (key === "updatedAt" || key === "tanggalKembaliAktual") {
+          values.push(toDbDateTime(value as string | Date))
+        } else {
+          values.push(value)
+        }
       }
     }
     
@@ -185,10 +200,10 @@ export async function updateBook(id: string, book: Partial<Book>): Promise<void>
     values.push(id)
     await pool.query(`UPDATE books SET ${fields.join(", ")} WHERE id = ?`, values)
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     const index = localBooks.findIndex(b => b.id === id)
     if (index > -1) {
-      localBooks[index] = { ...localBooks[index], ...book } as Book
+      localBooks[index] = { ...localBooks[index], ...book, updatedAt: new Date().toISOString() } as Book
     }
   }
 }
@@ -197,7 +212,7 @@ export async function deleteBook(id: string): Promise<void> {
   try {
     await pool.query("DELETE FROM books WHERE id = ?", [id])
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     const index = localBooks.findIndex(b => b.id === id)
     if (index > -1) {
       localBooks.splice(index, 1)
@@ -214,7 +229,7 @@ export async function getPeminjaman(userId?: string): Promise<Peminjaman[]> {
     const [rows] = await pool.query("SELECT * FROM peminjaman ORDER BY createdAt DESC")
     return rows as Peminjaman[]
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     if (userId) {
       return localPeminjaman.filter(p => p.userId === userId)
     }
@@ -228,7 +243,7 @@ export async function findPeminjamanById(id: string): Promise<Peminjaman | null>
     const list = rows as Peminjaman[]
     return list.length > 0 ? list[0] : null
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     return localPeminjaman.find(p => p.id === id) || null
   }
 }
@@ -242,7 +257,15 @@ export async function createPeminjaman(p: Peminjaman): Promise<void> {
       // Insert peminjaman record
       await connection.query(
         "INSERT INTO peminjaman (id, userId, bookId, tanggalPinjam, tanggalKembaliTarget, status, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [p.id, p.userId, p.bookId, p.tanggalPinjam, p.tanggalKembaliTarget, p.status, p.createdAt]
+        [
+          p.id,
+          p.userId,
+          p.bookId,
+          toDbDateTime(p.tanggalPinjam),
+          toDbDateTime(p.tanggalKembaliTarget),
+          p.status,
+          toDbDateTime(p.createdAt)
+        ]
       )
       
       // Decrement stock
@@ -256,7 +279,7 @@ export async function createPeminjaman(p: Peminjaman): Promise<void> {
       connection.release()
     }
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     localPeminjaman.push(p)
     const bookIndex = localBooks.findIndex(b => b.id === p.bookId)
     if (bookIndex > -1) {
@@ -270,7 +293,7 @@ export async function getPengembalian(): Promise<Pengembalian[]> {
     const [rows] = await pool.query("SELECT * FROM pengembalian ORDER BY createdAt DESC")
     return rows as Pengembalian[]
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     return localPengembalian
   }
 }
@@ -290,13 +313,21 @@ export async function createPengembalian(
       // Insert pengembalian record
       await connection.query(
         "INSERT INTO pengembalian (id, peminjamanId, tanggalKembali, statusBuku, biayaKerusakan, catatan, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [p.id, p.peminjamanId, p.tanggalKembali, p.statusBuku, p.biayaKerusakan, p.catatan, p.createdAt]
+        [
+          p.id,
+          p.peminjamanId,
+          toDbDateTime(p.tanggalKembali),
+          p.statusBuku,
+          p.biayaKerusakan,
+          p.catatan,
+          toDbDateTime(p.createdAt)
+        ]
       )
       
       // Update peminjaman status
       await connection.query(
         "UPDATE peminjaman SET status = 'dikembalikan', tanggalKembaliAktual = ?, denda = ? WHERE id = ?",
-        [tanggalKembaliAktual, denda, peminjamanId]
+        [toDbDateTime(tanggalKembaliAktual), denda, peminjamanId]
       )
       
       // Increment stock
@@ -310,7 +341,7 @@ export async function createPengembalian(
       connection.release()
     }
   } catch (error) {
-    console.warn("DB connection failed, falling back to local memory storage.")
+    console.warn("DB connection failed, falling back to local memory storage.", error)
     localPengembalian.push(p)
     const pemIndex = localPeminjaman.findIndex(pem => pem.id === peminjamanId)
     if (pemIndex > -1) {

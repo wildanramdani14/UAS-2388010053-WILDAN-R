@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { findBookById, updateBook, deleteBook } from "@/app/lib/mockData"
 
+export const dynamic = "force-dynamic"
+
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -42,6 +45,12 @@ export async function PUT(
     }
 
     const updateData = await request.json()
+
+    // Recalculate stokTersedia if stok is updated
+    if (typeof updateData.stok === "number") {
+      const diff = updateData.stok - book.stok
+      updateData.stokTersedia = Math.max(0, book.stokTersedia + diff)
+    }
 
     await updateBook(params.id, updateData)
 

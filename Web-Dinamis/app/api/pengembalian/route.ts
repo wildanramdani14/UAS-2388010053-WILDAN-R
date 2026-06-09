@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { getPengembalian, findPeminjamanById, createPengembalian } from "@/app/lib/mockData"
 import { Pengembalian } from "@/app/lib/types"
 
+export const dynamic = "force-dynamic"
+
+
 export async function GET() {
   try {
     const data = await getPengembalian()

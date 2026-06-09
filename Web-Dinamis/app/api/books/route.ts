@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getBooks, createBook } from "@/app/lib/mockData"
 
+export const dynamic = "force-dynamic"
+
+
 export async function GET() {
   try {
     const data = await getBooks()

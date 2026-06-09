@@ -131,7 +131,7 @@ export default function AdminDashboard() {
           {/* Header */}
           <div className="flex justify-between items-center mb-12">
             <div>
-              <h1 className="section-title">Admin Dashboard</h1>
+              <h1 className="section-title">Wildan Ramdani 2388010053</h1>
               <p className="text-gray-600">Kelola koleksi buku perpustakaan</p>
             </div>
             <button
@@ -369,8 +369,8 @@ export default function AdminDashboard() {
                         <td className="py-3 px-4 text-sm font-semibold">{book.stok}</td>
                         <td className="py-3 px-4 text-sm">
                           <span className={`px-3 py-1 rounded-full text-xs font-bold ${book.stokTersedia > 0
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
                             }`}>
                             {book.stokTersedia}
                           </span>

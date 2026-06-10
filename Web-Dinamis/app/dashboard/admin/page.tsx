@@ -182,7 +182,7 @@ export default function AdminDashboard() {
               className="btn-primary flex items-center gap-2"
             >
               <FiPlus size={20} />
-              {showForm ? "Batalkan" : "Add Book"}
+              {showForm ? "Cancel" : "Add Book"}
             </button>
           </div>
 
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
           {showForm && (
             <div className="card mb-12">
               <h2 className="text-2xl font-bold mb-6">
-                {editingId ? "Edit Buku" : "Tambah Buku Baru"}
+                {editingId ? "Edit Book" : "Add Book"}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
                 </div>
                 <div className="flex gap-4">
                   <button type="submit" className="btn-primary">
-                    {editingId ? "Perbarui" : "Tambah"} Buku
+                    {editingId ? "Update Book" : "Add Book"}
                   </button>
                   <button
                     type="button"
@@ -327,7 +327,7 @@ export default function AdminDashboard() {
                     }}
                     className="btn-secondary"
                   >
-                    Batal
+                    Cancel
                   </button>
                 </div>
               </form>

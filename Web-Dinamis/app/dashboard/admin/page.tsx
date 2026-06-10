@@ -131,7 +131,7 @@ export default function AdminDashboard() {
           {/* Header */}
           <div className="flex justify-between items-center mb-12">
             <div>
-              <h1 className="section-title">Halo Administrator </h1>
+              <h1 className="section-title">Halo Administrator</h1>
               <p className="text-gray-600">Kelola koleksi buku perpustakaan</p>
             </div>
             <button
@@ -182,7 +182,7 @@ export default function AdminDashboard() {
               className="btn-primary flex items-center gap-2"
             >
               <FiPlus size={20} />
-              {showForm ? "Batalkan" : "Tambah Buku Baru"}
+              {showForm ? "Batalkan" : "Add Book"}
             </button>
           </div>
 
